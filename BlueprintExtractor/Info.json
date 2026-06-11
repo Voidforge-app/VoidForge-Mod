@@ -1,0 +1,12 @@
+﻿{
+  "Id": "BlueprintExtractor",
+  "DisplayName": "BlueprintExtractor",
+  "Author": "Sensanaty",
+  "Version": "1.0.0",
+  "ManagerVersion": "0.25.0",
+  "Requirements": [],
+  "AssemblyName": "BlueprintExtractor.dll",
+  "EntryMethod": "BlueprintExtractor.Main.Load",
+  "HomePage": "",
+  "Repository": ""
+}
