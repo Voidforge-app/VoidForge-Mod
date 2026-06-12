@@ -8,10 +8,10 @@ namespace BlueprintExtractor.Extraction;
  * A "reachable" bool is set by cross-referencing the ItemReachabilityIndex.
  */
 public static class ItemFilter {
-  /// <summary>
-  ///   Returns true if the extracted item fields indicate a player-relevant item.
-  ///   Filters out: non-removable NPC gear, unlootable items, natural weapons, and dev items.
-  /// </summary>
+  /**
+   * Returns true if the extracted item fields indicate a player-relevant item.
+   * Filters out: non-removable NPC gear, unlootable items, natural weapons, and dev items.
+   */
   public static bool IsPlayerRelevant(Dictionary<string, object> itemFields, object blueprintObject) {
     // Exclude items hardcoded onto NPCs
     if (GetBool(itemFields, "IsNonRemovable")) return false;
@@ -27,10 +27,8 @@ public static class ItemFilter {
   }
 
   /**
-   * <summary>
-   * </summary>
-   * Sets the "reachable" field to true if the given GUID appears in the reachability index, false otherwise. An item is
-   * reachable if it appears in any vendor table or loot container.
+   * Sets the "reachable" field to true if the given GUID appears in the reachability index, false otherwise.
+   * An item is reachable if it appears in any vendor table or loot container.
    */
   public static void SetReachability(Dictionary<string, object> itemFields, string guid,
     HashSet<string> reachableGuids) {

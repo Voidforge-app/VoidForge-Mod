@@ -11,11 +11,11 @@ namespace BlueprintExtractor.Extraction;
 public static class BlueprintFieldExtractor {
   private const BindingFlags InstancePublicFlags = BindingFlags.Public | BindingFlags.Instance;
 
-  /// <summary>
-  ///   Extracts all public instance fields and properties from a blueprint into a flat dictionary.
-  ///   Only includes primitive, enum, and string types to avoid serialization explosions
-  ///   from complex Unity objects or circular references.
-  /// </summary>
+  /**
+   * Extracts all public instance fields and properties from a blueprint into a flat dictionary.
+   * Only includes primitive, enum, and string types to avoid serialization explosions
+   * from complex Unity objects or circular references.
+   */
   public static Dictionary<string, object> ExtractSimpleFields(object blueprintObject) {
     var extractedFields = new Dictionary<string, object>();
     var blueprintType = blueprintObject.GetType();
@@ -60,10 +60,10 @@ public static class BlueprintFieldExtractor {
     return extractedFields;
   }
 
-  /// <summary>
-  ///   Dumps the full public API surface (properties + fields) of a blueprint type
-  ///   for developer inspection. Used during discovery phase to identify correct field names.
-  /// </summary>
+  /**
+   * Dumps the full public API surface (properties + fields) of a blueprint type
+   * for developer inspection. Used during discovery phase to identify correct field names.
+   */
   public static object BuildTypeSchema(Type blueprintType) {
     return new {
       TypeName = blueprintType.FullName,
