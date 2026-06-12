@@ -40,6 +40,8 @@ public static class CompanionExporter {
         logger.Warn(Source, $"skipped guid={unit.AssetGuid} reason={exception.Message}");
       }
 
+    companions = DeduplicateByName(companions);
+
     companions.Sort((a, b) =>
       string.Compare(a["Name"] as string ?? "", b["Name"] as string ?? "", StringComparison.Ordinal));
 
@@ -47,6 +49,35 @@ public static class CompanionExporter {
     ExportWriter.WriteEnvelope(outputDirectory, "companions", envelope);
 
     logger.Result(Source, "export done", ("count", companions.Count), ("filtered", skippedCount));
+  }
+
+  /**
+   * Removes companions that share the same resolved name, keeping the entry with the most CareerProgressions.
+   * Story-variant companions (e.g. Hope_Chorda_Companion vs Chorda_Companion) share a LocalizedName string key and
+   * would otherwise export as identical-named duplicates. The richer entry (more career data) is the one players
+   * actually level up.
+   */
+  private static List<Dictionary<string, object>> DeduplicateByName(List<Dictionary<string, object>> companions) {
+    var seen = new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal);
+
+    foreach (var companion in companions) {
+      var name = companion["Name"] as string ?? "";
+
+      if (!seen.TryGetValue(name, out var existing)) {
+        seen[name] = companion;
+
+        continue;
+      }
+
+      var existingProgressionCount = (existing["CareerProgressions"] as List<Dictionary<string, object>>)?.Count ?? 0;
+      var candidateProgressionCount = (companion["CareerProgressions"] as List<Dictionary<string, object>>)?.Count ?? 0;
+
+      if (candidateProgressionCount > existingProgressionCount) {
+        seen[name] = companion;
+      }
+    }
+
+    return seen.Values.ToList();
   }
 
   /**
@@ -59,9 +90,8 @@ public static class CompanionExporter {
 
     if (!assetName.EndsWith("Companion")) return false;
     if (assetName.Contains("_Ch")) return false;
-    if (assetName.StartsWith("TEST")) return false;
 
-    return true;
+    return !assetName.StartsWith("TEST");
   }
 
   /**
