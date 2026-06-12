@@ -25,6 +25,7 @@ public static class MainExporter {
     ExportWriter.WriteSchema(outputDirectory, "cache_schema", cacheSchema);
 
     try {
+      WeaponExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
     }
     catch (Exception exception) {
       logger.Error("export", "fatal error during item export", exception);
