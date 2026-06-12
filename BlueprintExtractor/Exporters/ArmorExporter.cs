@@ -11,7 +11,7 @@ namespace BlueprintExtractor.Exporters;
 public static class ArmorExporter {
   private const string Source = "armor";
 
-  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
+  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory, HashSet<string> reachableItemGuids) {
     var extractedArmor = new List<Dictionary<string, object>>();
     var skippedCount = 0;
 
@@ -30,7 +30,7 @@ public static class ArmorExporter {
           continue;
         }
 
-        ItemFilter.AddReachabilityPlaceholder(armorFields);
+        ItemFilter.SetReachability(armorFields, armorBlueprint.AssetGuid, reachableItemGuids);
         extractedArmor.Add(armorFields);
       }
       catch (Exception exception) {

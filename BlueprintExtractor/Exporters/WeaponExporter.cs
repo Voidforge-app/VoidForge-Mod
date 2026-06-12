@@ -12,7 +12,7 @@ namespace BlueprintExtractor.Exporters;
 public static class WeaponExporter {
   private const string Source = "weapons";
 
-  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
+  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory, HashSet<string> reachableItemGuids) {
     var extractedWeapons = new List<Dictionary<string, object>>();
 
     var skippedCount = 0;
@@ -32,7 +32,7 @@ public static class WeaponExporter {
           continue;
         }
 
-        ItemFilter.AddReachabilityPlaceholder(weaponFields);
+        ItemFilter.SetReachability(weaponFields, weaponBlueprint.AssetGuid, reachableItemGuids);
         extractedWeapons.Add(weaponFields);
       }
       catch (Exception exception) {

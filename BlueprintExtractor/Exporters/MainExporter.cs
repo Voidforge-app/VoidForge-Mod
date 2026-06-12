@@ -1,3 +1,4 @@
+using BlueprintExtractor.Extraction;
 using BlueprintExtractor.Infrastructure;
 
 namespace BlueprintExtractor.Exporters;
@@ -7,7 +8,9 @@ namespace BlueprintExtractor.Exporters;
  * Resolves the output directory, creates the mod logger, then delegates to individual per-type exporters.
  */
 public static class MainExporter {
-  public static void ExportAll() {
+  public static HashSet<string> ExportedCompanionGuids { get; private set; } = new();
+
+  public static string ExportAll() {
     var gameVersion = GameVersionHelper.GetVersion();
     var gameRevision = GameVersionHelper.GetRevision();
     var outputDirectory = ExportWriter.ResolveOutputDirectory(gameVersion);
@@ -25,13 +28,15 @@ public static class MainExporter {
     ExportWriter.WriteSchema(outputDirectory, "cache_schema", cacheSchema);
 
     try {
-      WeaponExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
-      ArmorExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
-      EquipmentExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
+      var reachableItemGuids = ItemReachabilityIndex.Build(logger);
+
+      WeaponExporter.Export(logger, gameVersion, gameRevision, outputDirectory, reachableItemGuids);
+      ArmorExporter.Export(logger, gameVersion, gameRevision, outputDirectory, reachableItemGuids);
+      EquipmentExporter.Export(logger, gameVersion, gameRevision, outputDirectory, reachableItemGuids);
       CareerExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       OriginExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       FeaturesExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
-      CompanionExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
+      ExportedCompanionGuids = CompanionExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
 
       logger.Info("export", "all exports complete");
     }
@@ -41,5 +46,7 @@ public static class MainExporter {
     finally {
       logger.Flush();
     }
+
+    return outputDirectory;
   }
 }

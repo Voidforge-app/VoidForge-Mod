@@ -13,7 +13,7 @@ namespace BlueprintExtractor.Exporters;
 public static class EquipmentExporter {
   private const string Source = "equipment";
 
-  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
+  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory, HashSet<string> reachableItemGuids) {
     var extractedEquipment = new List<Dictionary<string, object>>();
     var skippedCount = 0;
 
@@ -35,7 +35,7 @@ public static class EquipmentExporter {
           continue;
         }
 
-        ItemFilter.AddReachabilityPlaceholder(equipmentFields);
+        ItemFilter.SetReachability(equipmentFields, equipmentBlueprint.AssetGuid, reachableItemGuids);
         extractedEquipment.Add(equipmentFields);
       }
       catch (Exception exception) {
