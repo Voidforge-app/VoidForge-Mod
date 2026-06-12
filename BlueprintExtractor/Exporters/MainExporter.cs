@@ -30,6 +30,7 @@ public static class MainExporter {
       EquipmentExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       CareerExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       OriginExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
+      FeaturesExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
     }
     catch (Exception exception) {
       logger.Error("export", "fatal error during item export", exception);
