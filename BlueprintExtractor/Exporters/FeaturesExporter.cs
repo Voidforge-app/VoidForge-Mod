@@ -70,18 +70,58 @@ public static class FeaturesExporter {
 
       if (!groupMap.ContainsKey("ChargenHomeworld") || isPregenPath) continue;
 
-      var chargenPathId = origin.AssetGuid;
-
       foreach (var groupEntry in groupMap) {
+        // Omit ChargenPathId: all player-facing paths share the same feature GUIDs per group,
+        // so including the path ID would produce ×4 duplicate sources for the same feature.
         var source = new Dictionary<string, object> {
           ["Type"] = "chargen",
-          ["ChargenPathId"] = chargenPathId,
           ["Group"] = groupEntry.Key,
         };
 
-        foreach (var feature in groupEntry.Value)
+        foreach (var feature in groupEntry.Value) {
           AccumulateFeature(featureById, sourceKeysByGuid, feature, source);
+
+          // Occupation features carry their own sub-features: innate abilities via AddFacts
+          // and occupation-specific talent pool additions via AddFeaturesToLevelUp.
+          // Neither appears in the career path traversal, so we must collect them here.
+          if (groupEntry.Key == "ChargenOccupation") {
+            AccumulateOccupationSubFeatures(featureById, sourceKeysByGuid, feature);
+          }
+        }
       }
+    }
+  }
+
+  private static void AccumulateOccupationSubFeatures(
+    Dictionary<string, Dictionary<string, object>> featureById,
+    Dictionary<string, HashSet<string>> sourceKeysByGuid,
+    object occupationBlueprint) {
+    if (occupationBlueprint is not SimpleBlueprint occupationFeature) return;
+
+    var occupationId = occupationFeature.AssetGuid;
+
+    // Innate abilities auto-granted by the occupation (e.g. "You. Serve Me." for Noble).
+    var innateSource = new Dictionary<string, object> {
+      ["Type"] = "occupationGranted",
+      ["OccupationId"] = occupationId,
+    };
+
+    foreach (var innateFeature in RankEntryExtractor.EnumerateAddFactsBlueprints(occupationBlueprint))
+      AccumulateFeature(featureById, sourceKeysByGuid, innateFeature, innateSource);
+
+    // Occupation-specific talent pool additions (Talent/CommonTalent/FirstCareerTalent/etc.).
+    // Skill and Attribute groups are structural advancement trackers, not player-selectable.
+    foreach (var groupEntry in RankEntryExtractor.BuildFeatureGroupMap(occupationBlueprint)) {
+      if (groupEntry.Key is "Skill" or "Attribute") continue;
+
+      var poolSource = new Dictionary<string, object> {
+        ["Type"] = "occupationSelection",
+        ["OccupationId"] = occupationId,
+        ["Group"] = groupEntry.Key,
+      };
+
+      foreach (var poolFeature in groupEntry.Value)
+        AccumulateFeature(featureById, sourceKeysByGuid, poolFeature, poolSource);
     }
   }
 
