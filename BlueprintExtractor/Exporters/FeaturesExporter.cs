@@ -1,6 +1,7 @@
 using BlueprintExtractor.Extraction;
 using BlueprintExtractor.Infrastructure;
 using Kingmaker.Blueprints;
+using Kingmaker.UI.Models.Tooltip.Base;
 using Kingmaker.UnitLogic.Progression.Paths;
 
 namespace BlueprintExtractor.Exporters;
@@ -43,6 +44,7 @@ public static class FeaturesExporter {
         var source = new Dictionary<string, object> {
           ["Type"] = "careerSelection",
           ["CareerId"] = careerId,
+          ["CareerName"] = career.Name ?? "",
           ["Group"] = groupEntry.Key,
         };
 
@@ -54,6 +56,7 @@ public static class FeaturesExporter {
       var grantedSource = new Dictionary<string, object> {
         ["Type"] = "careerGranted",
         ["CareerId"] = careerId,
+        ["CareerName"] = career.Name ?? "",
       };
 
       foreach (var feature in RankEntryExtractor.EnumerateGrantedFeatureBlueprints(career))
@@ -99,11 +102,13 @@ public static class FeaturesExporter {
     if (occupationBlueprint is not SimpleBlueprint occupationFeature) return;
 
     var occupationId = occupationFeature.AssetGuid;
+    var occupationName = (occupationBlueprint as IUIDataProvider)?.Name ?? "";
 
     // Innate abilities auto-granted by the occupation (e.g. "You. Serve Me." for Noble).
     var innateSource = new Dictionary<string, object> {
       ["Type"] = "occupationGranted",
       ["OccupationId"] = occupationId,
+      ["OccupationName"] = occupationName,
     };
 
     foreach (var innateFeature in RankEntryExtractor.EnumerateAddFactsBlueprints(occupationBlueprint))
@@ -117,6 +122,7 @@ public static class FeaturesExporter {
       var poolSource = new Dictionary<string, object> {
         ["Type"] = "occupationSelection",
         ["OccupationId"] = occupationId,
+        ["OccupationName"] = occupationName,
         ["Group"] = groupEntry.Key,
       };
 
