@@ -14,7 +14,7 @@ public static class CareerExporter {
   public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
     var extractedCareers = new List<Dictionary<string, object>>();
 
-    foreach (var career in BlueprintsCatalog.AllBlueprints<BlueprintCareerPath>())
+    foreach (var career in BlueprintsCatalog.AllBlueprints<BlueprintCareerPath>()) 
       try {
         if (!career.IsAvailable) continue;
 

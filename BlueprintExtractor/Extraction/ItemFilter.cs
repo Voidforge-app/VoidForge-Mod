@@ -26,11 +26,14 @@ public static class ItemFilter {
     return blueprintObject is not BlueprintItemWeapon || GetBool(itemFields, "CanBeUsedInGame");
   }
 
-  /// <summary>
-  ///   Sets the "reachable" field to true if the given GUID appears in the reachability index,
-  ///   false otherwise. An item is reachable if it appears in any vendor table or loot container.
-  /// </summary>
-  public static void SetReachability(Dictionary<string, object> itemFields, string guid, HashSet<string> reachableGuids) {
+  /**
+   * <summary>
+   * </summary>
+   * Sets the "reachable" field to true if the given GUID appears in the reachability index, false otherwise. An item is
+   * reachable if it appears in any vendor table or loot container.
+   */
+  public static void SetReachability(Dictionary<string, object> itemFields, string guid,
+    HashSet<string> reachableGuids) {
     itemFields["reachable"] = reachableGuids.Contains(guid);
   }
 
@@ -41,9 +44,8 @@ public static class ItemFilter {
   public static bool IsValidName(string name) {
     if (string.IsNullOrWhiteSpace(name)) return false;
     if (name == "<null>") return false;
-    if (name.StartsWith("[unknown key:")) return false;
 
-    return true;
+    return !name.StartsWith("[unknown key:");
   }
 
   private static bool GetBool(Dictionary<string, object> fields, string key) {

@@ -18,7 +18,8 @@ public static class CompanionExporter {
 
   private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
-  public static HashSet<string> Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
+  public static HashSet<string> Export(ModLogger logger, string gameVersion, string gameRevision,
+    string outputDirectory) {
     var companions = new List<Dictionary<string, object>>();
     var skippedCount = 0;
 

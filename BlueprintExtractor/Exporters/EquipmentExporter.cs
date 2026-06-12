@@ -13,7 +13,8 @@ namespace BlueprintExtractor.Exporters;
 public static class EquipmentExporter {
   private const string Source = "equipment";
 
-  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory, HashSet<string> reachableItemGuids) {
+  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory,
+    HashSet<string> reachableItemGuids) {
     var extractedEquipment = new List<Dictionary<string, object>>();
     var skippedCount = 0;
 

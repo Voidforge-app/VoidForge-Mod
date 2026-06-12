@@ -12,10 +12,10 @@ namespace BlueprintExtractor.Infrastructure;
 public static class BlueprintsCatalog {
   private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
-  /// <summary>
-  ///   Enumerates all blueprints of the specified type by force-loading every registered GUID.
-  ///   m_LoadedBlueprints has all GUIDs registered at Init time but .Blueprint is null until accessed.
-  /// </summary>
+  /**
+   * Enumerates all blueprints of the specified type by force-loading every registered GUID.
+   * m_LoadedBlueprints has all GUIDs registered at Init time but .Blueprint is null until accessed.
+   */
   public static IEnumerable<T> AllBlueprints<T>() where T : SimpleBlueprint {
     var cache = ResourcesLibrary.BlueprintsCache;
 
@@ -58,18 +58,18 @@ public static class BlueprintsCatalog {
     }
   }
 
-  /// <summary>
-  ///   Returns the total number of registered blueprint GUIDs in the cache.
-  /// </summary>
+  /**
+   * Returns the total number of registered blueprint GUIDs in the cache.
+   */
   public static int TotalRegisteredCount() {
     var cache = ResourcesLibrary.BlueprintsCache;
 
     return cache?.m_LoadedBlueprints?.Count ?? 0;
   }
 
-  /// <summary>
-  ///   Returns diagnostic info about the BlueprintsCache internals for schema discovery.
-  /// </summary>
+  /**
+   * Returns diagnostic info about the BlueprintsCache internals for schema discovery.
+   */
   public static object DumpCacheSchema() {
     var cache = ResourcesLibrary.BlueprintsCache;
 

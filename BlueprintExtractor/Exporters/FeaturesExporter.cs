@@ -90,8 +90,7 @@ public static class FeaturesExporter {
     Dictionary<string, HashSet<string>> sourceKeysByGuid,
     object blueprint,
     Dictionary<string, object> source) {
-    if (blueprint == null) return;
-    if (!(blueprint is SimpleBlueprint simpleBlueprint)) return;
+    if (blueprint is not SimpleBlueprint simpleBlueprint) return;
 
     var guid = simpleBlueprint.AssetGuid;
 

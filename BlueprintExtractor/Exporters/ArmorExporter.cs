@@ -11,7 +11,8 @@ namespace BlueprintExtractor.Exporters;
 public static class ArmorExporter {
   private const string Source = "armor";
 
-  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory, HashSet<string> reachableItemGuids) {
+  public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory,
+    HashSet<string> reachableItemGuids) {
     var extractedArmor = new List<Dictionary<string, object>>();
     var skippedCount = 0;
 
