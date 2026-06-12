@@ -10,6 +10,8 @@ namespace BlueprintExtractor.Infrastructure;
  * so we force-load each via ResourcesLibrary.TryGetBlueprint.
  */
 public static class BlueprintsCatalog {
+  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
   /// <summary>
   ///   Enumerates all blueprints of the specified type by force-loading every registered GUID.
   ///   m_LoadedBlueprints has all GUIDs registered at Init time but .Blueprint is null until accessed.
@@ -32,9 +34,27 @@ public static class BlueprintsCatalog {
         // Some entries fail to deserialize - skip them
       }
 
-      if (loadedBlueprint is T matchingBlueprint) {
+      if (loadedBlueprint is T matchingBlueprint && !IsShadowDeleted(loadedBlueprint)) {
         yield return matchingBlueprint;
       }
+    }
+  }
+
+  /**
+   * Returns true if the blueprint is marked as shadow-deleted in its metadata.
+   * 
+   * Shadow-deleted blueprints are abandoned/removed assets that remain in the binary registry but should not be visible
+   * to players. We check IsShadowDeleted via reflection since the property lives in RogueTrader.GameCore.dll and may
+   * move between patches.
+   */
+  private static bool IsShadowDeleted(SimpleBlueprint blueprint) {
+    try {
+      var property = blueprint.GetType().GetProperty("IsShadowDeleted", AllInstanceFlags);
+
+      return property?.GetValue(blueprint) is true;
+    }
+    catch {
+      return false;
     }
   }
 
