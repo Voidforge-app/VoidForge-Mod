@@ -6,35 +6,48 @@ namespace BlueprintExtractor.Exporters;
 
 /**
  * Extracts all BlueprintItemWeapon instances from the game's blueprint cache.
- * 
- * Outputs weapons.json (data) and weapons_schema.json (type API surface for development).
+ * Outputs weapons.json with a curated set of build-planner-relevant fields.
  */
 public static class WeaponExporter {
   private const string Source = "weapons";
 
+  // The exact set of fields the build planner needs. Everything else from the raw blueprint dump is noise.
+  private static readonly HashSet<string> KeptFields = [
+    "AssetGuid", "Name", "Description", "FlavorText", "Rarity",
+    "Category", "Family", "HoldingType", "IsRanged", "IsMelee", "IsTwoHanded", "AttackType", "Heaviness",
+    "WarhammerDamage", "WarhammerMaxDamage", "WarhammerPenetration", "DodgePenetration",
+    "WarhammerRecoil", "WarhammerMaxDistance", "WarhammerMaxAmmo", "RateOfFire",
+    "AdditionalHitChance", "OverrideOverpenetrationFactorPercents",
+    "SpendCharges", "Charges", "RestoreChargesAfterCombat",
+    "GainAbility", "IsNotable", "ProfitFactorCost",
+  ];
+
   public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory,
     HashSet<string> reachableItemGuids) {
     var extractedWeapons = new List<Dictionary<string, object>>();
-
     var skippedCount = 0;
 
     foreach (var weaponBlueprint in BlueprintsCatalog.AllBlueprints<BlueprintItemWeapon>())
       try {
-        var weaponFields = BlueprintFieldExtractor.ExtractSimpleFields(weaponBlueprint);
+        var allFields = BlueprintFieldExtractor.ExtractSimpleFields(weaponBlueprint);
 
-        if (!weaponFields.TryGetValue("Name", out var nameValue) || nameValue is not string weaponName ||
+        if (!allFields.TryGetValue("Name", out var nameValue) || nameValue is not string weaponName ||
             !ItemFilter.IsValidName(weaponName)) {
           continue;
         }
 
-        if (!ItemFilter.IsPlayerRelevant(weaponFields, weaponBlueprint)) {
+        if (!ItemFilter.IsPlayerRelevant(allFields, weaponBlueprint)) {
           skippedCount++;
 
           continue;
         }
 
-        ItemFilter.SetReachability(weaponFields, weaponBlueprint.AssetGuid, reachableItemGuids);
-        extractedWeapons.Add(weaponFields);
+        var weaponData = KeptFields
+          .Where(allFields.ContainsKey)
+          .ToDictionary(key => key, key => allFields[key]);
+
+        ItemFilter.SetReachability(weaponData, weaponBlueprint.AssetGuid, reachableItemGuids);
+        extractedWeapons.Add(weaponData);
       }
       catch (Exception exception) {
         logger.Warn(Source, $"skipped guid={weaponBlueprint.AssetGuid} reason={exception.Message}");
@@ -42,9 +55,6 @@ public static class WeaponExporter {
 
     var envelope = ExportEnvelope<Dictionary<string, object>>.Create(gameVersion, gameRevision, extractedWeapons);
     ExportWriter.WriteEnvelope(outputDirectory, "weapons", envelope);
-
-    var weaponSchema = BlueprintFieldExtractor.BuildTypeSchema(typeof(BlueprintItemWeapon));
-    ExportWriter.WriteSchema(outputDirectory, "weapons_schema", weaponSchema);
 
     logger.Result(Source, "export done", ("count", extractedWeapons.Count), ("filtered", skippedCount));
   }

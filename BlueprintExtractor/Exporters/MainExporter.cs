@@ -23,10 +23,6 @@ public static class MainExporter {
     logger.Info("export", $"outputDir={outputDirectory}");
     logger.Info("export", $"registeredBlueprints={BlueprintsCatalog.TotalRegisteredCount()}");
 
-    // Dump cache internals for development reference
-    var cacheSchema = BlueprintsCatalog.DumpCacheSchema();
-    ExportWriter.WriteSchema(outputDirectory, "cache_schema", cacheSchema);
-
     try {
       var reachableItemGuids = ItemReachabilityIndex.Build(logger);
 
