@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
 using BlueprintExtractor.Exporters;
+using BlueprintExtractor.Infrastructure;
 using HarmonyLib;
 using Kingmaker.Blueprints.JsonSystem;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace BlueprintExtractor;
@@ -9,6 +11,8 @@ namespace BlueprintExtractor;
 public static class Main {
   private static Harmony HarmonyInstance;
   private static UnityModManager.ModEntry.ModLogger Log;
+  private static string outputDirectory;
+  private static string assetExportStatus = "";
 
   public static bool Load(UnityModManager.ModEntry modEntry) {
     Log = modEntry.Logger;
@@ -27,7 +31,31 @@ public static class Main {
     return true;
   }
 
-  private static void OnGUI(UnityModManager.ModEntry modEntry) { }
+  private static void OnGUI(UnityModManager.ModEntry modEntry) {
+    GUILayout.Label("VoidForge Blueprint Extractor");
+
+    if (!string.IsNullOrEmpty(outputDirectory)) {
+      if (GUILayout.Button("Export Icons + Portraits")) {
+        try {
+          var logger = new ModLogger(outputDirectory);
+
+          IconExporter.ExportIcons(logger, outputDirectory);
+          IconExporter.ExportPortraits(logger, outputDirectory, MainExporter.ExportedCompanionGuids);
+          logger.Flush();
+
+          assetExportStatus = "Done - check icons/ and portraits/ in the output directory.";
+        }
+        catch (Exception exception) {
+          assetExportStatus = $"Failed: {exception.Message}";
+        }
+      }
+
+      if (!string.IsNullOrEmpty(assetExportStatus)) GUILayout.Label(assetExportStatus);
+    }
+    else {
+      GUILayout.Label("Run the game to completion of blueprint load first.");
+    }
+  }
 
   [HarmonyPatch(typeof(BlueprintsCache))]
   public static class BlueprintsCaches_Patch {
@@ -46,7 +74,7 @@ public static class Main {
 
         Initialized = true;
 
-        MainExporter.ExportAll();
+        outputDirectory = MainExporter.ExportAll();
       }
       catch (Exception e) {
         Log.Log(string.Concat("Failed to initialize.", e));
