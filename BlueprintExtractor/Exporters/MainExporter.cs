@@ -26,6 +26,7 @@ public static class MainExporter {
 
     try {
       WeaponExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
+      ArmorExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
     }
     catch (Exception exception) {
       logger.Error("export", "fatal error during item export", exception);
