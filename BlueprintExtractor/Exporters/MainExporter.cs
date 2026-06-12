@@ -41,7 +41,7 @@ public static class MainExporter {
       logger.Info("export", "all exports complete");
     }
     catch (Exception exception) {
-      logger.Error("export", "fatal error during item export", exception);
+      logger.Error("export", "fatal error during export", exception);
     }
     finally {
       logger.Flush();
