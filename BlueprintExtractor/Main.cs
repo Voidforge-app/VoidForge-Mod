@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using BlueprintExtractor.Exporters;
 using HarmonyLib;
 using Kingmaker.Blueprints.JsonSystem;
 using UnityModManagerNet;
@@ -45,10 +46,7 @@ public static class Main {
 
         Initialized = true;
 
-        Log.Log("Patching blueprints.");
-        // Insert your mod blueprint add/subtract/patch here
-        // Example
-        // MyAwesomeFeat.Patch();
+        MainExporter.ExportAll();
       }
       catch (Exception e) {
         Log.Log(string.Concat("Failed to initialize.", e));
