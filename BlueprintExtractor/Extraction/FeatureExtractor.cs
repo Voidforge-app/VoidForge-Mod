@@ -35,6 +35,7 @@ public static class FeatureExtractor {
 
     result["FeatureTypes"] = ExtractFeatureTypes(blueprint, blueprintType);
     result["Prerequisites"] = ExtractPrerequisiteComponents(blueprint, blueprintType);
+    result["TalentGroup"] = ExtractTalentGroup(blueprint, blueprintType);
 
     return result;
   }
@@ -118,6 +119,15 @@ public static class FeatureExtractor {
     }
 
     return guids;
+  }
+
+  private static string ExtractTalentGroup(object blueprint, Type blueprintType) {
+    var talentIconInfoField = blueprintType.GetField("TalentIconInfo", AllInstanceFlags);
+    var talentIconInfo = talentIconInfoField?.GetValue(blueprint);
+    if (talentIconInfo == null) return null;
+
+    var mainGroupField = talentIconInfo.GetType().GetField("MainGroup", AllInstanceFlags);
+    return mainGroupField?.GetValue(talentIconInfo)?.ToString();
   }
 
   private static List<string> ExtractFeatureTypes(object blueprint, Type blueprintType) {
