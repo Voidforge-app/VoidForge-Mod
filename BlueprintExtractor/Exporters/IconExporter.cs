@@ -25,7 +25,7 @@ namespace BlueprintExtractor.Exporters;
  */
 public static class IconExporter {
   private const string Source = "icons";
-  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+  private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
   /**
    * Exports item and feature icons. Safe to call at BlueprintsCache.Init time since icons are
@@ -59,7 +59,7 @@ public static class IconExporter {
     var failCount = 0;
 
     foreach (var unit in BlueprintsCatalog.AllBlueprints<BlueprintUnit>()) {
-      if (!IsNamedCompanionUnit(unit)) continue;
+      if (!UnitFilter.IsBaseCompanionUnit(unit)) continue;
       if (!exportedCompanionGuids.Contains(unit.AssetGuid)) continue;
 
       try {
@@ -250,14 +250,5 @@ public static class IconExporter {
     if (portraitRef == null) return null;
 
     return RankEntryExtractor.Dereference(portraitRef) as BlueprintPortrait;
-  }
-
-  private static bool IsNamedCompanionUnit(BlueprintUnit unit) {
-    var assetName = unit.name;
-
-    if (!assetName.EndsWith("Companion")) return false;
-    if (assetName.Contains("_Ch")) return false;
-
-    return !assetName.StartsWith("TEST");
   }
 }

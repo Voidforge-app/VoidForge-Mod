@@ -12,7 +12,7 @@ namespace BlueprintExtractor.Extraction;
  * Used by item exporters to populate the "reachable" flag on each exported item.
  */
 public static class ItemReachabilityIndex {
-  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+  private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
   public static HashSet<string> Build(ModLogger logger) {
     var reachableGuids = new HashSet<string>(StringComparer.Ordinal);
@@ -57,7 +57,7 @@ public static class ItemReachabilityIndex {
     var count = 0;
 
     foreach (var unit in BlueprintsCatalog.AllBlueprints<BlueprintUnit>()) {
-      if (!IsNamedCompanionUnit(unit)) continue;
+      if (!UnitFilter.IsBaseCompanionUnit(unit)) continue;
 
       try {
         CollectFromUnitBody(unit, reachableGuids);
@@ -69,19 +69,6 @@ public static class ItemReachabilityIndex {
     }
 
     return count;
-  }
-
-  /**
-   * Mirror of CompanionExporter.IsBaseCompanionUnit — same filter criteria.
-   * Targets asset names that end with "Companion", excluding chapter variants and dev units.
-   */
-  private static bool IsNamedCompanionUnit(BlueprintUnit unit) {
-    var assetName = unit.name;
-
-    if (!assetName.EndsWith("Companion")) return false;
-    if (assetName.Contains("_Ch")) return false;
-
-    return !assetName.StartsWith("TEST");
   }
 
   private static void CollectFromUnitBody(BlueprintUnit unit, HashSet<string> reachableGuids) {

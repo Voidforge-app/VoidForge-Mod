@@ -11,7 +11,7 @@ namespace BlueprintExtractor.Extraction;
  * id, name, description, featureTypes, prerequisites.
  */
 public static class FeatureExtractor {
-  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+  private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
   /**
    * Extracts the minimal set of fields needed by the build planner from any feature/blueprint.

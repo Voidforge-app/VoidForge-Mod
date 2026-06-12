@@ -16,7 +16,7 @@ namespace BlueprintExtractor.Exporters;
 public static class CompanionExporter {
   private const string Source = "companions";
 
-  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+  private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
   public static HashSet<string> Export(ModLogger logger, string gameVersion, string gameRevision,
     string outputDirectory) {
@@ -25,7 +25,7 @@ public static class CompanionExporter {
 
     foreach (var unit in BlueprintsCatalog.AllBlueprints<BlueprintUnit>())
       try {
-        if (!IsBaseCompanionUnit(unit)) continue;
+        if (!UnitFilter.IsBaseCompanionUnit(unit)) continue;
 
         var featureListFeature = FindFeatureListFeature(unit);
 
@@ -84,20 +84,6 @@ public static class CompanionExporter {
   }
 
   /**
-   * Matches the base companion unit blueprints by their asset name.
-   * Valid names end with "Companion" (covers both "ArgentaCompanion" and "Argenta_Companion" patterns).
-   * Excludes: chapter variants (e.g. Ulfar_Ch03End_Companion), dev/test units (TESTArgentaCompanion).
-   */
-  private static bool IsBaseCompanionUnit(BlueprintUnit unit) {
-    var assetName = unit.name;
-
-    if (!assetName.EndsWith("Companion")) return false;
-    if (assetName.Contains("_Ch")) return false;
-
-    return !assetName.StartsWith("TEST");
-  }
-
-  /**
    * Finds the *FeatureList feature in the unit's m_AddFacts - identified by having an ApplyCareerPath component.
    */
   private static object FindFeatureListFeature(BlueprintUnit unit) {
@@ -143,41 +129,24 @@ public static class CompanionExporter {
   /**
    * BlueprintUnit stores its name in LocalizedName (a SharedStringAsset), not m_DisplayName.
    * SharedStringAsset.String is a LocalizedString whose ToString() resolves through the localization manager.
+   * LocalizedString.ToString() calls a static CurrentPack that may be null at export time, so we use
+   * LocalizationManager.Instance.CurrentPack directly with the raw m_Key.
    */
   private static string ExtractUnitName(BlueprintUnit unit) {
-    var unitType = unit.GetType();
-
     try {
-      var localizedNameField = unitType.GetField("LocalizedName", AllInstanceFlags);
-      var localizedName = localizedNameField?.GetValue(unit);
+      var unitType = unit.GetType();
+      var localizedName = unitType.GetField("LocalizedName", AllInstanceFlags)?.GetValue(unit);
+      var localizedString = localizedName?.GetType().GetField("String", AllInstanceFlags)?.GetValue(localizedName);
+      var key = localizedString?.GetType().GetField("m_Key", AllInstanceFlags)?.GetValue(localizedString) as string;
 
-      if (localizedName != null) {
-        var stringField = localizedName.GetType().GetField("String", AllInstanceFlags);
+      if (!string.IsNullOrEmpty(key)) {
+        var text = LocalizationManager.Instance.CurrentPack.GetText(key);
 
-        if (stringField != null) {
-          var localizedString = stringField.GetValue(localizedName);
-
-          if (localizedString != null) {
-            // LocalizedString.ToString() calls a static CurrentPack that may be null at export time.
-            // Use LocalizationManager.Instance.CurrentPack directly with the raw m_Key.
-            var keyField = localizedString.GetType().GetField("m_Key", AllInstanceFlags);
-            var key = keyField?.GetValue(localizedString) as string;
-
-            if (!string.IsNullOrEmpty(key)) {
-              var text = LocalizationManager.Instance.CurrentPack.GetText(key);
-
-              if (!string.IsNullOrEmpty(text)) return text;
-            }
-          }
-        }
+        if (!string.IsNullOrEmpty(text)) return text;
       }
-    }
-    catch { }
 
-    // Fallback: standard Name property (works for units whose m_DisplayName is populated)
-    try {
-      var nameProperty = unitType.GetProperty("Name", AllInstanceFlags);
-      var name = nameProperty?.GetValue(unit) as string;
+      // Fallback: standard Name property (works for units whose m_DisplayName is populated)
+      var name = unitType.GetProperty("Name", AllInstanceFlags)?.GetValue(unit) as string;
 
       if (!string.IsNullOrEmpty(name)) return name;
     }

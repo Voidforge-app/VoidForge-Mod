@@ -16,7 +16,7 @@ namespace BlueprintExtractor.Extraction;
  * - matches a component's group, giving the available talent list for that selection.
  */
 public static class RankEntryExtractor {
-  private const BindingFlags AllInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+  private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
   public static List<Dictionary<string, object>> ExtractRankEntries(object blueprint) {
     var entries = new List<Dictionary<string, object>>();
@@ -220,6 +220,41 @@ public static class RankEntryExtractor {
         }
 
         if (feature != null) yield return feature;
+      }
+    }
+  }
+
+  /**
+   * Yields the raw blueprint objects granted via AddFacts components on the given blueprint.
+   * 
+   * Used to traverse occupation innate abilities that are not listed in AddFeaturesToLevelUp.
+   */
+  public static IEnumerable<object> EnumerateAddFactsBlueprints(object blueprint) {
+    var componentsProperty = blueprint.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+    if (componentsProperty?.GetValue(blueprint) is not IEnumerable components) yield break;
+
+    foreach (var component in components) {
+      if (component == null) continue;
+      if (component.GetType().Name != "AddFacts") continue;
+
+      var factsField = component.GetType().GetField("m_Facts", AllInstanceFlags);
+
+      if (factsField?.GetValue(component) is not IEnumerable factRefs) continue;
+
+      foreach (var factRef in factRefs) {
+        if (factRef == null) continue;
+
+        object fact = null;
+
+        try {
+          fact = Dereference(factRef);
+        }
+        catch {
+          /* skip unresolvable */
+        }
+
+        if (fact != null) yield return fact;
       }
     }
   }
