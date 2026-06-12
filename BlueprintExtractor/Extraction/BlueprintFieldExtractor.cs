@@ -60,22 +60,6 @@ public static class BlueprintFieldExtractor {
     return extractedFields;
   }
 
-  /**
-   * Dumps the full public API surface (properties + fields) of a blueprint type
-   * for developer inspection. Used during discovery phase to identify correct field names.
-   */
-  public static object BuildTypeSchema(Type blueprintType) {
-    return new {
-      TypeName = blueprintType.FullName,
-      Properties = blueprintType.GetProperties(InstancePublicFlags)
-        .Select(property => new { property.Name, Type = property.PropertyType.Name, property.CanRead })
-        .ToList(),
-      Fields = blueprintType.GetFields(InstancePublicFlags)
-        .Select(field => new { field.Name, Type = field.FieldType.Name })
-        .ToList(),
-    };
-  }
-
   private static string ToCamelCase(string name) {
     if (string.IsNullOrEmpty(name)) return name;
 

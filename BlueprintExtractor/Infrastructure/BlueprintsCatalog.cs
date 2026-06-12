@@ -67,26 +67,4 @@ public static class BlueprintsCatalog {
     return cache?.m_LoadedBlueprints?.Count ?? 0;
   }
 
-  /**
-   * Returns diagnostic info about the BlueprintsCache internals for schema discovery.
-   */
-  public static object DumpCacheSchema() {
-    var cache = ResourcesLibrary.BlueprintsCache;
-
-    if (cache == null) return new { Error = "cache is null" };
-
-    var cacheType = cache.GetType();
-    const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-
-    return new {
-      TypeName = cacheType.FullName,
-      LoadedCount = cache.m_LoadedBlueprints?.Count ?? -1,
-      Fields = cacheType.GetFields(flags)
-        .Select(field => new { field.Name, Type = field.FieldType.Name })
-        .ToList(),
-      Properties = cacheType.GetProperties(flags)
-        .Select(property => new { property.Name, Type = property.PropertyType.Name })
-        .ToList(),
-    };
-  }
 }

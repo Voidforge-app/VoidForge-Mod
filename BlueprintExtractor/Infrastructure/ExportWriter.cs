@@ -22,13 +22,6 @@ public static class ExportWriter {
     File.WriteAllText(outputPath, serializedJson);
   }
 
-  public static void WriteSchema(string outputDirectory, string fileName, object schemaObject) {
-    var serializedJson = JsonConvert.SerializeObject(schemaObject, SerializerSettings);
-    var outputPath = Path.Combine(outputDirectory, $"{fileName}.json");
-
-    File.WriteAllText(outputPath, serializedJson);
-  }
-
   public static string ResolveOutputDirectory(string gameVersion) {
     var explorationBasePath = GetExplorationBasePath();
 
