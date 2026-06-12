@@ -5,7 +5,7 @@ namespace BlueprintExtractor.Extraction;
 /**
  * Heuristic filters for identifying player-equippable items.
  * Excludes NPC-only gear, dev/test items, natural weapons, and non-game items.
- * A "reachable" field is added as a placeholder for future loot-table reachability analysis.
+ * A "reachable" bool is set by cross-referencing the ItemReachabilityIndex.
  */
 public static class ItemFilter {
   /// <summary>
@@ -27,10 +27,11 @@ public static class ItemFilter {
   }
 
   /// <summary>
-  ///   Adds a "reachable" placeholder field. Will be populated by loot-table traversal in a future pass.
+  ///   Sets the "reachable" field to true if the given GUID appears in the reachability index,
+  ///   false otherwise. An item is reachable if it appears in any vendor table or loot container.
   /// </summary>
-  public static void AddReachabilityPlaceholder(Dictionary<string, object> itemFields) {
-    itemFields["reachable"] = null;
+  public static void SetReachability(Dictionary<string, object> itemFields, string guid, HashSet<string> reachableGuids) {
+    itemFields["reachable"] = reachableGuids.Contains(guid);
   }
 
   /**
