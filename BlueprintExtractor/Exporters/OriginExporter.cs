@@ -33,7 +33,6 @@ public static class OriginExporter {
 
         var originData = new Dictionary<string, object> {
           ["Id"] = origin.AssetGuid,
-          ["AssetName"] = origin.name,
           ["ChargenGroups"] = chargenGroups,
         };
 
