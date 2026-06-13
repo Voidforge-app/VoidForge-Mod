@@ -32,6 +32,7 @@ public static class MainExporter {
       CareerExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       OriginExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       FeaturesExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
+      EncyclopediaExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
       ExportedCompanionGuids = CompanionExporter.Export(logger, gameVersion, gameRevision, outputDirectory);
 
       logger.Info("export", "all exports complete");
