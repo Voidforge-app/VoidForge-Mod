@@ -37,6 +37,10 @@ public static class FeatureExtractor {
     result["Prerequisites"] = ExtractPrerequisiteComponents(blueprint, blueprintType);
     result["TalentGroup"] = ExtractTalentGroup(blueprint, blueprintType);
 
+    var uiParams = UiParamExtractor.ExtractUiParams(blueprint);
+
+    if (uiParams.Count > 0) result["UiParams"] = uiParams;
+
     return result;
   }
 
@@ -147,19 +151,41 @@ public static class FeatureExtractor {
   private static List<Dictionary<string, object>> ExtractPrerequisiteComponents(object blueprint, Type blueprintType) {
     var result = new List<Dictionary<string, object>>();
 
+    // Modern system: prerequisites live in blueprint.Prerequisites.List
+    // Prerequisites may be a field or property depending on the blueprint type — try both.
+    var prerequisitesField = blueprintType.GetField("Prerequisites", AllInstanceFlags);
+    var prerequisites = prerequisitesField != null
+      ? prerequisitesField.GetValue(blueprint)
+      : blueprintType.GetProperty("Prerequisites", AllInstanceFlags)?.GetValue(blueprint);
+    var listField = prerequisites?.GetType().GetField("List", AllInstanceFlags);
+
+    if (listField?.GetValue(prerequisites) is IEnumerable modernList) {
+      foreach (var prerequisite in modernList) {
+        if (prerequisite == null) continue;
+
+        try {
+          result.Add(ExtractPrerequisiteComponent(prerequisite));
+        }
+        catch {
+          /* skip malformed */
+        }
+      }
+    }
+
+    // Legacy system: Prerequisite_Obsolete components on ComponentsArray
     var componentsProperty = blueprintType.GetProperty("ComponentsArray", AllInstanceFlags);
 
-    if (componentsProperty?.GetValue(blueprint) is not IEnumerable components) return result;
+    if (componentsProperty?.GetValue(blueprint) is IEnumerable components) {
+      foreach (var component in components) {
+        if (component == null) continue;
+        if (!component.GetType().Name.StartsWith("Prerequisite")) continue;
 
-    foreach (var component in components) {
-      if (component == null) continue;
-      if (!component.GetType().Name.StartsWith("Prerequisite")) continue;
-
-      try {
-        result.Add(ExtractPrerequisiteComponent(component));
-      }
-      catch {
-        /* skip malformed prerequisite components */
+        try {
+          result.Add(ExtractPrerequisiteComponent(component));
+        }
+        catch {
+          /* skip malformed */
+        }
       }
     }
 
@@ -194,6 +220,14 @@ public static class FeatureExtractor {
 
     // Feature reference (PrerequisiteFeature)
     TryExtractSingleRef(component, componentType, "m_Feature", "RequiredFeatureId", prereq);
+
+    // Fact reference (PrerequisiteFact — the more common modern form)
+    TryExtractSingleRef(component, componentType, "m_Fact", "RequiredFeatureId", prereq);
+
+    // Not flag: prerequisite is inverted ("must NOT have this feature")
+    var notField = componentType.GetField("Not", AllInstanceFlags);
+
+    if (notField?.GetValue(component) is true) prereq["Not"] = true;
 
     return prereq;
   }
@@ -251,7 +285,7 @@ public static class FeatureExtractor {
    * that the game returns when a key is missing ("
    * <null>" or "[unknown key: ...").
    */
-  private static string SanitizeLocalizedString(string value) {
+  public static string SanitizeLocalizedString(string value) {
     if (string.IsNullOrWhiteSpace(value)) return "";
     if (value == "<null>") return "";
     if (value.StartsWith("[unknown key:")) return "";
