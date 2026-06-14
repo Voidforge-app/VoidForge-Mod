@@ -16,7 +16,18 @@ public static class CareerExporter {
 
     foreach (var career in BlueprintsCatalog.AllBlueprints<BlueprintCareerPath>())
       try {
-        if (!career.IsAvailable) continue;
+        string careerDisplayName;
+
+        try {
+          careerDisplayName = career.Name ?? "";
+        }
+        catch {
+          careerDisplayName = "";
+        }
+
+        if (!ItemFilter.IsValidName(careerDisplayName)) continue;
+        if (careerDisplayName.StartsWith("Test ", StringComparison.OrdinalIgnoreCase)) continue;
+        if (career.HideNotAvailibleInUI) continue;
 
         var careerData = new Dictionary<string, object> {
           ["Id"] = career.AssetGuid,

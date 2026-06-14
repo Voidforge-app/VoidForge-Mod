@@ -268,8 +268,6 @@ public static class CompanionExporter {
         }
         catch { }
       }
-
-      break;
     }
 
     return result;

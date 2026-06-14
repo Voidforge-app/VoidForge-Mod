@@ -260,6 +260,196 @@ public static class RankEntryExtractor {
   }
 
   /**
+   * Yields facts granted to the wielder by an equipment item via AddFactToEquipmentWielder components.
+   * Covers item-granted abilities like "Inquisitor's Decree" from the Inquisitor Ring.
+   */
+  public static IEnumerable<object> EnumerateEquipmentGrantedFacts(object item) {
+    var componentsProperty = item.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+    if (componentsProperty?.GetValue(item) is not IEnumerable components) yield break;
+
+    foreach (var component in components) {
+      if (component == null) continue;
+      if (component.GetType().Name != "AddFactToEquipmentWielder") continue;
+
+      var factField = component.GetType().GetField("m_Fact", AllInstanceFlags);
+
+      if (factField == null) continue;
+
+      var factRef = factField.GetValue(component);
+
+      if (factRef == null) continue;
+
+      object fact = null;
+
+      try {
+        fact = Dereference(factRef);
+      }
+      catch {
+        /* skip unresolvable */
+      }
+
+      if (fact != null) yield return fact;
+    }
+  }
+
+  /**
+   * Yields career path blueprints referenced by ApplyCareerPath components on a companion FeatureList.
+   * Used to collect auto-granted features from DLC-exclusive companion careers that are skipped by
+   * the IsAvailable gate in the main career traversal (e.g. Kibellah's Cannoness career).
+   */
+  public static IEnumerable<object> EnumerateFeatureListCareerPaths(object featureList) {
+    var componentsProperty = featureList.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+    if (componentsProperty?.GetValue(featureList) is not IEnumerable components) yield break;
+
+    foreach (var component in components) {
+      if (component == null) continue;
+      if (component.GetType().Name != "ApplyCareerPath") continue;
+
+      var careerPathField = component.GetType().GetField("m_CareerPath", AllInstanceFlags);
+
+      if (careerPathField == null) continue;
+
+      var careerPathRef = careerPathField.GetValue(component);
+
+      if (careerPathRef == null) continue;
+
+      object careerPath = null;
+
+      try {
+        careerPath = Dereference(careerPathRef);
+      }
+      catch {
+        /* skip unresolvable */
+      }
+
+      if (careerPath != null) yield return careerPath;
+    }
+  }
+
+  /**
+   * Yields occupation blueprints from the ChargenOccupation selections recorded in a companion FeatureList.
+   * Each ApplyCareerPath component on the FeatureList records what the companion "chose" at chargen --
+   * for companion-specific occupations (e.g. SpaceMarine for Ulfar) these are never in the main
+   * player chargen path traversal, so we must read them here to find their innate AddFacts abilities.
+   */
+  public static IEnumerable<object> EnumerateFeatureListOccupations(object featureList) {
+    var componentsProperty = featureList.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+    if (componentsProperty?.GetValue(featureList) is not IEnumerable components) yield break;
+
+    foreach (var component in components) {
+      if (component == null) continue;
+      if (component.GetType().Name != "ApplyCareerPath") continue;
+
+      var selectionsField = component.GetType().GetField("Selections", AllInstanceFlags);
+
+      if (selectionsField?.GetValue(component) is not IEnumerable selectionGroups) continue;
+
+      foreach (var selectionGroup in selectionGroups) {
+        if (selectionGroup == null) continue;
+
+        var groupField = selectionGroup.GetType().GetField("Group", AllInstanceFlags);
+        var groupValue = groupField?.GetValue(selectionGroup)?.ToString();
+
+        if (groupValue != "ChargenOccupation") continue;
+
+        var itemsField = selectionGroup.GetType().GetField("m_Items", AllInstanceFlags);
+
+        if (itemsField?.GetValue(selectionGroup) is not IEnumerable itemRefs) continue;
+
+        foreach (var itemRef in itemRefs) {
+          if (itemRef == null) continue;
+
+          object occupation = null;
+
+          try {
+            occupation = Dereference(itemRef);
+          }
+          catch {
+            /* skip unresolvable */
+          }
+
+          if (occupation != null) yield return occupation;
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns the companion FeatureList blueprint from a BlueprintUnit's m_AddFacts field.
+   * The FeatureList is identified by containing at least one ApplyCareerPath component.
+   * Returns null if none is found.
+   */
+  public static object FindCompanionFeatureList(object unit) {
+    var addFactsField = unit.GetType().GetField("m_AddFacts", AllInstanceFlags);
+
+    if (addFactsField?.GetValue(unit) is not IEnumerable factRefs) return null;
+
+    foreach (var factRef in factRefs) {
+      if (factRef == null) continue;
+
+      object fact = null;
+
+      try {
+        fact = Dereference(factRef);
+      }
+      catch {
+        continue;
+      }
+
+      if (fact == null) continue;
+
+      var componentsProperty = fact.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+      if (componentsProperty?.GetValue(fact) is IEnumerable components &&
+          components.Cast<object>().Any(component => component?.GetType().Name == "ApplyCareerPath")) {
+        return fact;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Yields raw blueprint objects from a BlueprintUnit's m_AddFacts field, skipping the companion
+   * FeatureList (identified by containing an ApplyCareerPath component) which is handled separately.
+   * Used by FeaturesExporter to collect companion-specific features not reachable from any career
+   * or chargen path.
+   */
+  public static IEnumerable<object> EnumerateUnitDirectFacts(object unit) {
+    var addFactsField = unit.GetType().GetField("m_AddFacts", AllInstanceFlags);
+
+    if (addFactsField?.GetValue(unit) is not IEnumerable factRefs) yield break;
+
+    foreach (var factRef in factRefs) {
+      if (factRef == null) continue;
+
+      object fact = null;
+
+      try {
+        fact = Dereference(factRef);
+      }
+      catch {
+        /* skip unresolvable */
+      }
+
+      if (fact == null) continue;
+
+      // Skip the FeatureList — it has ApplyCareerPath components and is handled by CompanionExporter.
+      var componentsProperty = fact.GetType().GetProperty("ComponentsArray", AllInstanceFlags);
+
+      if (componentsProperty?.GetValue(fact) is IEnumerable components &&
+          components.Cast<object>().Any(component => component?.GetType().Name == "ApplyCareerPath")) {
+        continue;
+      }
+
+      yield return fact;
+    }
+  }
+
+  /**
    * Resolves an Owlcat blueprint reference object to the actual blueprint it points at.
    * 
    * Tries the three reference patterns used across the engine.

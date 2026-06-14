@@ -8,7 +8,7 @@ namespace BlueprintExtractor.Extraction;
 /**
  * Focused extraction of player-facing data from blueprint objects.
  * Produces clean dictionaries with only build-planner-relevant fields:
- * id, name, description, featureTypes, prerequisites.
+ * id, name, description, featureTypes, prerequisites, and petInfo for Master career pet keystones.
  */
 public static class FeatureExtractor {
   private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
@@ -25,8 +25,25 @@ public static class FeatureExtractor {
     }
 
     if (blueprint is IUIDataProvider uiData) {
-      result["Name"] = SanitizeLocalizedString(uiData.Name);
-      result["Description"] = SanitizeLocalizedString(uiData.Description);
+      var rawName = "";
+      var rawDescription = "";
+
+      try {
+        rawName = uiData.Name;
+      }
+      catch {
+        /* template variables require active session */
+      }
+
+      try {
+        rawDescription = uiData.Description;
+      }
+      catch {
+        /* template variables require active session */
+      }
+
+      result["Name"] = SanitizeLocalizedString(rawName);
+      result["Description"] = SanitizeLocalizedString(rawDescription);
     }
     else {
       result["Name"] = "";
@@ -40,6 +57,10 @@ public static class FeatureExtractor {
     var uiParams = UiParamExtractor.ExtractUiParams(blueprint);
 
     if (uiParams.Count > 0) result["UiParams"] = uiParams;
+
+    var petInfo = ExtractPetInfo(blueprint, blueprintType);
+
+    if (petInfo != null) result["PetInfo"] = petInfo;
 
     return result;
   }
@@ -125,6 +146,85 @@ public static class FeatureExtractor {
     return guids;
   }
 
+  /**
+   * Extracts PetKeystoneInfoComponent data from Master career pet keystone features.
+   * Returns null for all blueprints that do not carry this component.
+   */
+  private static Dictionary<string, object> ExtractPetInfo(object blueprint, Type blueprintType) {
+    var componentsProperty = blueprintType.GetProperty("ComponentsArray", AllInstanceFlags);
+
+    if (componentsProperty?.GetValue(blueprint) is not IEnumerable components) return null;
+
+    foreach (var component in components) {
+      if (component?.GetType().Name != "PetKeystoneInfoComponent") continue;
+
+      var componentType = component.GetType();
+      var petInfo = new Dictionary<string, object>();
+
+      // PetType enum value: Mastiff, Eagle, Raven, SkullSwarm
+      var petTypeField = componentType.GetField("PetType", AllInstanceFlags);
+
+      if (petTypeField?.GetValue(component) is { } petTypeValue) {
+        petInfo["PetType"] = petTypeValue.ToString();
+      }
+
+      // KeyStats: list of { StatType } structs -- each StatType is a stat enum value
+      var keyStatsField = componentType.GetField("KeyStats", AllInstanceFlags);
+
+      if (keyStatsField?.GetValue(component) is IEnumerable keyStats) {
+        var statTypes = (from object keyStat in keyStats
+          where keyStat != null
+          let statTypeField = keyStat.GetType().GetField("StatType", AllInstanceFlags)
+          select statTypeField?.GetValue(keyStat)
+          into statTypeValue
+          where statTypeValue != null
+          select statTypeValue.ToString()).ToList();
+
+        petInfo["KeyStats"] = statTypes;
+      }
+
+      // CoreAbilitiesReferences: list of blueprint references to the pet's signature abilities
+      var coreAbilitiesField = componentType.GetField("CoreAbilitiesReferences", AllInstanceFlags);
+
+      if (coreAbilitiesField?.GetValue(component) is IEnumerable coreRefs) {
+        var abilityGuids = new List<string>();
+
+        foreach (var abilityRef in coreRefs) {
+          if (abilityRef == null) continue;
+
+          try {
+            if (RankEntryExtractor.Dereference(abilityRef) is SimpleBlueprint resolvedAbility) {
+              abilityGuids.Add(resolvedAbility.AssetGuid);
+            }
+          }
+          catch {
+            /* skip unresolvable */
+          }
+        }
+
+        petInfo["CoreAbilityIds"] = abilityGuids;
+      }
+
+      // PetUnitReference: the BlueprintUnit for the actual pet -- used to look up pet stats
+      var petUnitRefField = componentType.GetField("PetUnitReference", AllInstanceFlags);
+
+      if (petUnitRefField != null) {
+        try {
+          if (RankEntryExtractor.Dereference(petUnitRefField.GetValue(component)) is SimpleBlueprint resolvedUnit) {
+            petInfo["PetUnitId"] = resolvedUnit.AssetGuid;
+          }
+        }
+        catch {
+          /* skip unresolvable */
+        }
+      }
+
+      return petInfo.Count > 0 ? petInfo : null;
+    }
+
+    return null;
+  }
+
   private static string ExtractTalentGroup(object blueprint, Type blueprintType) {
     var talentIconInfoField = blueprintType.GetField("TalentIconInfo", AllInstanceFlags);
     var talentIconInfo = talentIconInfoField?.GetValue(blueprint);
@@ -175,17 +275,17 @@ public static class FeatureExtractor {
     // Legacy system: Prerequisite_Obsolete components on ComponentsArray
     var componentsProperty = blueprintType.GetProperty("ComponentsArray", AllInstanceFlags);
 
-    if (componentsProperty?.GetValue(blueprint) is IEnumerable components) {
-      foreach (var component in components) {
-        if (component == null) continue;
-        if (!component.GetType().Name.StartsWith("Prerequisite")) continue;
+    if (componentsProperty?.GetValue(blueprint) is not IEnumerable components) return result;
 
-        try {
-          result.Add(ExtractPrerequisiteComponent(component));
-        }
-        catch {
-          /* skip malformed */
-        }
+    foreach (var component in components) {
+      if (component == null) continue;
+      if (!component.GetType().Name.StartsWith("Prerequisite")) continue;
+
+      try {
+        result.Add(ExtractPrerequisiteComponent(component));
+      }
+      catch {
+        /* skip malformed */
       }
     }
 
@@ -288,8 +388,7 @@ public static class FeatureExtractor {
   public static string SanitizeLocalizedString(string value) {
     if (string.IsNullOrWhiteSpace(value)) return "";
     if (value == "<null>") return "";
-    if (value.StartsWith("[unknown key:")) return "";
 
-    return value;
+    return value.StartsWith("[unknown key:") ? "" : value;
   }
 }

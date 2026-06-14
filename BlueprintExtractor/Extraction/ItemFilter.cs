@@ -49,6 +49,6 @@ public static class ItemFilter {
   private static bool GetBool(Dictionary<string, object> fields, string key) {
     if (!fields.TryGetValue(key, out var value)) return false;
 
-    return value is true or "True";
+    return value is true;
   }
 }
