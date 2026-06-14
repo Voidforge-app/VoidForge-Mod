@@ -1,4 +1,3 @@
-using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -22,23 +21,13 @@ public static class ExportWriter {
     File.WriteAllText(outputPath, serializedJson);
   }
 
-  public static string ResolveOutputDirectory(string gameVersion) {
-    var explorationBasePath = GetExplorationBasePath();
-
-    return Path.Combine(explorationBasePath, gameVersion);
-  }
-
-  public static string GetExplorationBasePath() {
-    var explorationAttribute = Assembly.GetExecutingAssembly()
-      .GetCustomAttribute<ExplorationPathAttribute>();
-
-    if (explorationAttribute != null && !string.IsNullOrWhiteSpace(explorationAttribute.Path)) {
-      return explorationAttribute.Path;
+  public static string ResolveOutputDirectory(string gameVersion, string baseDirectoryOverride = null) {
+    if (!string.IsNullOrWhiteSpace(baseDirectoryOverride)) {
+      return Path.Combine(baseDirectoryOverride, gameVersion);
     }
 
-    // Fallback: write to Documents if attribute is somehow missing
     var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-    return Path.Combine(documentsPath, "RTExport");
+    return Path.Combine(documentsPath, "VoidForge", gameVersion);
   }
 }

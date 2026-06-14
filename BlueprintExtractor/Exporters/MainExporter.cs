@@ -10,10 +10,10 @@ namespace BlueprintExtractor.Exporters;
 public static class MainExporter {
   public static HashSet<string> ExportedCompanionGuids { get; private set; } = new();
 
-  public static string ExportAll() {
+  public static string ExportAll(string baseDirectoryOverride = null) {
     var gameVersion = GameVersionHelper.GetVersion();
     var gameRevision = GameVersionHelper.GetRevision();
-    var outputDirectory = ExportWriter.ResolveOutputDirectory(gameVersion);
+    var outputDirectory = ExportWriter.ResolveOutputDirectory(gameVersion, baseDirectoryOverride);
 
     Directory.CreateDirectory(outputDirectory);
 

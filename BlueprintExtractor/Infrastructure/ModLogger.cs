@@ -13,7 +13,7 @@ public class ModLogger {
   private readonly Stopwatch sessionTimer = Stopwatch.StartNew();
 
   public ModLogger(string outputDirectory = null, string logFileName = "mod") {
-    outputDirectory ??= ExportWriter.GetExplorationBasePath();
+    outputDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VoidForge");
     Directory.CreateDirectory(outputDirectory);
     logFilePath = Path.Combine(outputDirectory, $"{logFileName}.log");
 
