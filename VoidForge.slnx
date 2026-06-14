@@ -5,4 +5,5 @@
     </Folder>
 
     <Project Path="BlueprintExtractor/BlueprintExtractor.csproj" DisplayName="BlueprintExtractor"/>
+    <Project Path="ExportValidator/ExportValidator.csproj" DisplayName="ExportValidator"/>
 </Solution>
