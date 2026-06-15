@@ -303,7 +303,52 @@ public static class CompanionExporter {
     var armorId = ResolveItemId(bodyType, body, "m_Armor");
     if (armorId != null) result["ArmorId"] = armorId;
 
+    (string fieldName, string outputKey)[] singleSlots = [
+      ("m_Head", "HeadId"),
+      ("m_Neck", "NeckId"),
+      ("m_Gloves", "GlovesId"),
+      ("m_Belt", "BeltId"),
+      ("m_Feet", "FeetId"),
+      ("m_Ring1", "Ring1Id"),
+      ("m_Ring2", "Ring2Id"),
+      ("m_Wrist", "WristId"),
+      ("m_Shoulders", "ShouldersId"),
+    ];
+
+    foreach (var (fieldName, outputKey) in singleSlots) {
+      var slotId = ResolveItemId(bodyType, body, fieldName);
+      if (slotId != null) result[outputKey] = slotId;
+    }
+
+    result["QuickSlotIds"] = ResolveQuickSlots(bodyType, body);
+
     return result;
+  }
+
+  private static List<string> ResolveQuickSlots(Type bodyType, object body) {
+    var quickSlotIds = new List<string>();
+
+    var field = bodyType.GetField("m_QuickSlots", AllInstanceFlags);
+
+    if (field?.GetValue(body) is not IEnumerable slots) return quickSlotIds;
+
+    foreach (var slot in slots) {
+      if (slot == null) {
+        quickSlotIds.Add(null);
+
+        continue;
+      }
+
+      try {
+        var resolved = RankEntryExtractor.Dereference(slot);
+        quickSlotIds.Add((resolved as SimpleBlueprint)?.AssetGuid);
+      }
+      catch {
+        quickSlotIds.Add(null);
+      }
+    }
+
+    return quickSlotIds;
   }
 
   private static string ResolveItemId(Type containerType, object container, string fieldName) {

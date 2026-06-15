@@ -66,5 +66,4 @@ public static class BlueprintsCatalog {
 
     return cache?.m_LoadedBlueprints?.Count ?? 0;
   }
-
 }

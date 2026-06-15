@@ -252,7 +252,8 @@ public static class UiParamExtractor {
     return part;
   }
 
-  private static bool IsSimpleType(Type type) =>
-    type == typeof(string) || type == typeof(int) || type == typeof(float) ||
-    type == typeof(double) || type == typeof(bool) || type.IsEnum;
+  private static bool IsSimpleType(Type type) {
+    return type == typeof(string) || type == typeof(int) || type == typeof(float) ||
+           type == typeof(double) || type == typeof(bool) || type.IsEnum;
+  }
 }

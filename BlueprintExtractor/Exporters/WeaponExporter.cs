@@ -13,13 +13,11 @@ public static class WeaponExporter {
 
   // The exact set of fields the build planner needs. Everything else from the raw blueprint dump is noise.
   private static readonly HashSet<string> KeptFields = [
-    "AssetGuid", "Name", "Description", "FlavorText", "Rarity",
-    "Category", "Family", "HoldingType", "IsRanged", "IsMelee", "IsTwoHanded", "AttackType", "Heaviness",
-    "WarhammerDamage", "WarhammerMaxDamage", "WarhammerPenetration", "DodgePenetration",
-    "WarhammerRecoil", "WarhammerMaxDistance", "WarhammerMaxAmmo", "RateOfFire",
-    "AdditionalHitChance", "OverrideOverpenetrationFactorPercents",
-    "SpendCharges", "Charges", "RestoreChargesAfterCombat",
-    "GainAbility", "IsNotable", "ProfitFactorCost",
+    "AssetGuid", "Name", "Description", "FlavorText", "Rarity", "Category", "Family", "Classification", "HoldingType",
+    "IsRanged", "IsMelee", "IsTwoHanded", "AttackType", "Heaviness", "WarhammerDamage", "WarhammerMaxDamage",
+    "WarhammerPenetration", "DodgePenetration", "WarhammerRecoil", "WarhammerMaxDistance", "WarhammerMaxAmmo",
+    "RateOfFire", "AdditionalHitChance", "OverrideOverpenetrationFactorPercents", "SpendCharges", "Charges",
+    "RestoreChargesAfterCombat", "GainAbility", "IsNotable", "ProfitFactorCost",
   ];
 
   public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory,
