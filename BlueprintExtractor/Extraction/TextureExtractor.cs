@@ -32,16 +32,19 @@ public static class TextureExtractor {
     var previousActiveRenderTexture = RenderTexture.active;
     RenderTexture.active = renderTexture;
 
-    var readableTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-    readableTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-    readableTexture.Apply();
+    try {
+      var readableTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+      readableTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+      readableTexture.Apply();
 
-    RenderTexture.active = previousActiveRenderTexture;
-    RenderTexture.ReleaseTemporary(renderTexture);
+      File.WriteAllBytes(outputPath, readableTexture.EncodeToPNG());
+      Object.Destroy(readableTexture);
 
-    File.WriteAllBytes(outputPath, readableTexture.EncodeToPNG());
-    Object.Destroy(readableTexture);
-
-    return true;
+      return true;
+    }
+    finally {
+      RenderTexture.active = previousActiveRenderTexture;
+      RenderTexture.ReleaseTemporary(renderTexture);
+    }
   }
 }

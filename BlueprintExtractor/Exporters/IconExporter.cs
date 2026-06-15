@@ -1,5 +1,3 @@
-// Exports item icons, feature icons, and companion portraits as PNG files to the output directory.
-
 using System.Collections;
 using System.Reflection;
 using BlueprintExtractor.Extraction;
@@ -7,6 +5,7 @@ using BlueprintExtractor.Infrastructure;
 using Kingmaker.Blueprints;
 using Kingmaker.Blueprints.Items.Equipment;
 using Kingmaker.UI.Models.Tooltip.Base;
+using Kingmaker.UnitLogic.Abilities.Blueprints;
 using Kingmaker.UnitLogic.Progression.Features;
 using UnityEngine;
 
@@ -43,6 +42,7 @@ public static class IconExporter {
     var groupCount = ExportTalentGroupIcons(talentGroupIcons, groupIconsDir);
     var itemCount = ExportItemIcons(itemIconsDir);
     var featureCount = ExportFeatureIcons(featureIconsDir, talentGroupIcons);
+    featureCount += ExportAbilityIcons(featureIconsDir);
 
     logger.Result(Source, "icon export done", ("items", itemCount), ("features", featureCount), ("groups", groupCount));
   }
@@ -202,6 +202,31 @@ public static class IconExporter {
         if (icon == null) continue;
 
         var outputPath = Path.Combine(iconsDir, $"{feature.AssetGuid}.png");
+
+        if (TextureExtractor.SaveSpriteToPng(icon, outputPath, 128, 128)) count++;
+      }
+      catch { }
+
+    return count;
+  }
+
+  /**
+   * Exports icons for BlueprintAbility blueprints (heroic/desperate actions, companion abilities, etc.).
+   * Abilities do not have TalentIconInfo so only direct icon and m_Icon fallback are tried.
+   */
+  private static int ExportAbilityIcons(string iconsDir) {
+    var count = 0;
+
+    foreach (var ability in BlueprintsCatalog.AllBlueprints<BlueprintAbility>())
+      try {
+        if (ability is not IUIDataProvider uiData) continue;
+        if (!ItemFilter.IsValidName(uiData.Name)) continue;
+
+        var icon = uiData.Icon ?? ResolveIconField(ability);
+
+        if (icon == null) continue;
+
+        var outputPath = Path.Combine(iconsDir, $"{ability.AssetGuid}.png");
 
         if (TextureExtractor.SaveSpriteToPng(icon, outputPath, 128, 128)) count++;
       }
