@@ -3,7 +3,9 @@ using System.Reflection;
 
 namespace BlueprintExtractor.Extraction;
 
-// Extracts UIPropertiesComponent parameter formulas from feature blueprints for {uip|...} token resolution.
+/**
+ * Extracts UIPropertiesComponent parameter formulas from feature blueprints for {uip|...} token resolution.
+ */
 public static class UiParamExtractor {
   private const BindingFlags AllInstanceFlags = ReflectionHelpers.AllInstanceFlags;
 
@@ -81,15 +83,11 @@ public static class UiParamExtractor {
 
     if (componentsProperty?.GetValue(blueprint) is not IEnumerable components) return null;
 
-    foreach (var component in components) {
-      if (component?.GetType().Name != "PropertyCalculatorComponent") continue;
-
-      var nameField = component.GetType().GetField("Name", AllInstanceFlags);
-
-      if (nameField?.GetValue(component) as string == propertyName) return component;
-    }
-
-    return null;
+    return (from object component in components
+      where component?.GetType().Name == "PropertyCalculatorComponent"
+      let nameField = component.GetType().GetField("Name", AllInstanceFlags)
+      where nameField?.GetValue(component) as string == propertyName
+      select component).FirstOrDefault();
   }
 
   private static Dictionary<string, object> ParsePropertyCalculator(object calculatorComponent) {
@@ -188,21 +186,21 @@ public static class UiParamExtractor {
       var settingsField = getterType.GetField("Settings", AllInstanceFlags);
       var settings = settingsField?.GetValue(getter);
 
-      if (settings != null) {
-        var settingsType = settings.GetType();
+      if (settings == null) return part;
 
-        var progressionField = settingsType.GetField("Progression", AllInstanceFlags);
-        var progression = progressionField?.GetValue(settings)?.ToString();
+      var settingsType = settings.GetType();
 
-        if (!string.IsNullOrEmpty(progression) && progression != "AsIs") {
-          part["progression"] = progression;
-        }
+      var progressionField = settingsType.GetField("Progression", AllInstanceFlags);
+      var progression = progressionField?.GetValue(settings)?.ToString();
 
-        var negateField = settingsType.GetField("Negate", AllInstanceFlags);
+      if (!string.IsNullOrEmpty(progression) && progression != "AsIs") {
+        part["progression"] = progression;
+      }
 
-        if (negateField?.GetValue(settings) is true) {
-          part["negate"] = true;
-        }
+      var negateField = settingsType.GetField("Negate", AllInstanceFlags);
+
+      if (negateField?.GetValue(settings) is true) {
+        part["negate"] = true;
       }
 
       return part;

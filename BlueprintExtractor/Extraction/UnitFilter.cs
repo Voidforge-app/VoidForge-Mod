@@ -1,5 +1,3 @@
-// Filter predicate for identifying player-party companion units by asset name.
-
 using Kingmaker.Blueprints;
 
 namespace BlueprintExtractor.Extraction;

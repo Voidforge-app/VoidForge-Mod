@@ -1,5 +1,3 @@
-// Shared reflection constants and utilities used across all blueprint extraction code.
-
 using System.Reflection;
 
 namespace BlueprintExtractor.Extraction;
