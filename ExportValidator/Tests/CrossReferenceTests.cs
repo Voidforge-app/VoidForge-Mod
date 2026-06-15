@@ -24,25 +24,6 @@ public class CrossReferenceTests {
   ];
 
   /**
-   * Prerequisite GUIDs that reference blueprints not in features.json by design --
-   * career paths used as prerequisites, or internal engine features filtered at export.
-   * Update this set when the game changes career structures.
-   */
-  private static readonly HashSet<string> KnownUnresolvablePrerequisiteGuids = [
-    "21b0fc8cfbe940ecbef0114d5d27b44a", "33725d84e95e4323ac46d8fbf899b250",
-    "35d391c624b34b1e9f19c493005158a1", "36739347ec3144daac751b48c51d1e6a",
-    "37363b46061e46218f40e01ed81e9189", "3a23630530bc4d058ef2d209f5a739a4",
-    "3c62693889c14328acd5a1fc19c66b5a", "777d9f9c570443b59120e78f2d9dd515",
-    "899021d524224469affd02f756d60fdb", "9b090810169e4a42b22afd5995d3720d",
-    "a69ab12837ae4bfea6bb56f834892d7f", "a6e871aa095f4a1fa813fab77658ab78",
-    "aa932c209cdd43c9bb749d5380fc126e", "abe45adeb7d7415ca96df8fc6cd1acd2",
-    "affa5fdded7e404b910b990f5d344a8c", "b53037d92c984cf3921df309241e48ca",
-    "b6962fcc54054af98961dd9a6c0f9e18", "b901e045ca514d53bae43f4a9ecdf0b4",
-    "c2ad04ea9a394a84b5c8485f66d83d2b", "d7953c4cbf47463090ee3025ef390063",
-    "f95e3d9a049345ec918926f092ec67e2",
-  ];
-
-  /**
    * Companion starting equipment item IDs known to reference internal test/pregen items.
    */
   private static readonly HashSet<string> KnownMissingEquipmentIds = [
@@ -58,17 +39,31 @@ public class CrossReferenceTests {
       .Where(id => id != null)
       .ToHashSet();
 
-    var newlyUnresolvable = Features
+    // Career paths appear as prerequisites ("must have taken this career") but live in careers.json.
+    // Origin paths may similarly appear for companion-specific features.
+    var careerIds = ExportLoader.LoadItems("careers")
+      .Select(career => career["id"]?.Value<string>())
+      .Where(id => id != null)
+      .ToHashSet();
+
+    var originIds = ExportLoader.LoadItems("origins")
+      .Select(origin => origin["id"]?.Value<string>())
+      .Where(id => id != null)
+      .ToHashSet();
+
+    var allKnownIds = featureIds.Concat(careerIds).Concat(originIds).ToHashSet();
+
+    var unresolvable = Features
       .SelectMany(feature => feature["prerequisites"] as JArray ?? new JArray())
       .Select(prereq => prereq["requiredFeatureId"]?.Value<string>())
       .Where(id => id != null)
-      .Where(id => !featureIds.Contains(id!) && !KnownUnresolvablePrerequisiteGuids.Contains(id!))
+      .Where(id => !allKnownIds.Contains(id!))
       .Distinct()
       .ToList();
 
-    Assert.True(newlyUnresolvable.Count == 0,
-      $"New unresolvable prerequisite GUIDs (add to allowlist if expected): " +
-      $"{string.Join(", ", newlyUnresolvable)}");
+    Assert.True(unresolvable.Count == 0,
+      $"Unresolvable prerequisite GUIDs (not in features.json, careers.json, or origins.json): " +
+      $"{string.Join(", ", unresolvable)}");
   }
 
   [Fact]

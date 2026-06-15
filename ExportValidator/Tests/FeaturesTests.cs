@@ -10,9 +10,9 @@ public class FeaturesTests {
   private static readonly JArray Items = ExportLoader.LoadItems("features");
 
   [Fact]
-  public void Count_IsAtLeast600() {
-    Assert.True(Items.Count >= 600,
-      $"Expected >= 600 features, got {Items.Count} (game version: {ExportLoader.LatestVersion})");
+  public void Count_IsAtLeast750() {
+    Assert.True(Items.Count >= 750,
+      $"Expected >= 750 features, got {Items.Count} (game version: {ExportLoader.LatestVersion})");
   }
 
   [Fact]
@@ -68,6 +68,26 @@ public class FeaturesTests {
     var sourceTypes = sources.Select(source => source["type"]?.Value<string>()).ToList();
 
     Assert.Contains("occupationGranted", sourceTypes);
+  }
+
+  [Fact]
+  public void SomeFeatures_HaveBaseCharacterSource() {
+    var count = Items.Count(item =>
+      (item["sources"] as JArray ?? [])
+      .Any(source => source["type"]?.Value<string>() == "baseCharacter"));
+
+    Assert.True(count >= 30,
+      $"Expected >= 30 features with baseCharacter source (universal talent pool), got {count}");
+  }
+
+  [Fact]
+  public void SomeFeatures_HaveCompanionGrantedSource() {
+    var count = Items.Count(item =>
+      (item["sources"] as JArray ?? [])
+      .Any(source => source["type"]?.Value<string>() == "companionGranted"));
+
+    Assert.True(count >= 5,
+      $"Expected >= 5 features with companionGranted source, got {count}");
   }
 
   [Fact]
