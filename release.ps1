@@ -6,6 +6,7 @@
 #   .\release.ps1 -Bump minor        # 1.0.0 -> 1.1.0
 #   .\release.ps1 -Bump major        # 1.0.0 -> 2.0.0
 #   .\release.ps1 -Version 1.2.3     # set explicit version
+#   .\release.ps1 -Bump patch -Message "Adds X and fixes Y"
 [CmdletBinding(DefaultParameterSetName = "Bump")]
 param(
     [Parameter(ParameterSetName = "Bump", Mandatory)]
@@ -14,7 +15,10 @@ param(
 
     [Parameter(ParameterSetName = "Explicit", Mandatory)]
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string]$Version
+    [string]$Version,
+
+    [Parameter()]
+    [string]$Message
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,6 +73,8 @@ $changelogLines = git log $commitRange --pretty=format:"- %s (%h)" --no-merges
 $changelog = $changelogLines -join "`n"
 if (-not $changelog) { $changelog = "- Initial release" }
 
+$releaseNotes = if ($Message) { "$Message`n`n## Changelog`n$changelog" } else { $changelog }
+
 # --- Bump version in all relevant files ---
 Write-Host "==> Updating version files ..." -ForegroundColor Cyan
 
@@ -117,7 +123,7 @@ if ($LASTEXITCODE -ne 0) { Write-Error "git push tag failed."; exit 1 }
 Write-Host "==> Creating GitHub release $tag ..." -ForegroundColor Cyan
 gh release create $tag $zipPath `
     --title "BlueprintExtractor $Version" `
-    --notes $changelog
+    --notes $releaseNotes
 if ($LASTEXITCODE -ne 0) { Write-Error "gh release create failed."; exit 1 }
 
 Write-Host "==> Released $tag" -ForegroundColor Green
