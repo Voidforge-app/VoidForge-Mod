@@ -5,7 +5,7 @@
         <TargetFramework>net481</TargetFramework>
         <AssemblyName>BlueprintExtractor</AssemblyName>
         <Description>A Mod for Rogue Trader which extracts all Blueprints for the purposes of a build sharing website - VoidForge</Description>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RootNamespace>BlueprintExtractor</RootNamespace>
