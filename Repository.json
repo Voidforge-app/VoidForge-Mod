@@ -1,8 +1,8 @@
-﻿{
-  "Releases": [
-    {
-      "Id": "VoidForgeBlueprintExtractor",
-      "Version": "1.0.0"
-    }
-  ]
+{
+    "Releases":  [
+                     {
+                         "Id":  "VoidForgeBlueprintExtractor",
+                         "Version":  "1.0.0"
+                     }
+                 ]
 }
