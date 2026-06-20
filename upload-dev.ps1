@@ -1,16 +1,16 @@
 # Upload JSON exports to the voidforge-dev R2 bucket, optionally updating latest.json.
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$remote    = "VoidforgeR2"
-$bucket    = "voidforge-dev"
+$exportRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "VoidForge"
+$remote     = "VoidforgeR2"
+$bucket     = "voidforge-dev"
 
 # --- Version selection ---
-$versionDirs = Get-ChildItem -Path $scriptDir -Directory |
+$versionDirs = Get-ChildItem -Path $exportRoot -Directory |
     Where-Object { $_.Name -match '^\d+\.\d+' } |
     Sort-Object { try { [version]$_.Name } catch { [version]"0.0.0.0" } } -Descending
 
 if ($versionDirs.Count -eq 0) {
-    Write-Host "No version directories found in $scriptDir" -ForegroundColor Red
+    Write-Host "No version directories found in $exportRoot" -ForegroundColor Red
     Read-Host "Press Enter to exit"; exit
 }
 
@@ -32,7 +32,7 @@ if ($versionIndex -lt 0 -or $versionIndex -ge $versionDirs.Count) {
 }
 
 $selectedVersion = $versionDirs[$versionIndex].Name
-$sourcePath      = Join-Path $scriptDir $selectedVersion
+$sourcePath      = Join-Path $exportRoot $selectedVersion
 $isNewest        = $selectedVersion -eq $newestVersion
 
 $destination = "${remote}:${bucket}/${selectedVersion}"
