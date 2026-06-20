@@ -73,7 +73,8 @@ $changelogLines = git log $commitRange --pretty=format:"- %s (%h)" --no-merges
 $changelog = $changelogLines -join "`n"
 if (-not $changelog) { $changelog = "- Initial release" }
 
-$releaseNotes = if ($Message) { "$Message`n`n## Changelog`n$changelog" } else { $changelog }
+$preamble = "For installation instructions, check the [README](https://github.com/Voidforge-app/VoidForge-Mod#installing-the-mod)."
+$releaseNotes = if ($Message) { "$preamble`n`n$Message`n`n## Changelog`n$changelog" } else { "$preamble`n`n## Changelog`n$changelog" }
 
 # --- Bump version in all relevant files ---
 Write-Host "==> Updating version files ..." -ForegroundColor Cyan
