@@ -60,8 +60,11 @@ $zipPath = "BlueprintExtractor\bin\BlueprintExtractor-$Version.zip"
 Write-Host "  $currentVersion  ->  $Version" -ForegroundColor Yellow
 
 # --- Generate changelog before the version-bump commit ---
-$previousTag = git describe --tags --abbrev=0 2>$null
-$commitRange = if ($LASTEXITCODE -eq 0 -and $previousTag) { "$previousTag..HEAD" } else { "HEAD" }
+$ErrorActionPreference = "SilentlyContinue"
+$previousTag = git describe --tags --abbrev=0 2>&1 | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
+$hadPreviousTag = $LASTEXITCODE -eq 0 -and $previousTag
+$ErrorActionPreference = "Stop"
+$commitRange = if ($hadPreviousTag) { "$previousTag..HEAD" } else { "HEAD" }
 $changelogLines = git log $commitRange --pretty=format:"- %s (%h)" --no-merges
 $changelog = $changelogLines -join "`n"
 if (-not $changelog) { $changelog = "- Initial release" }
