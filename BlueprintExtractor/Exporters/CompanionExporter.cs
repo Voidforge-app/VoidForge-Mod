@@ -120,6 +120,7 @@ public static class CompanionExporter {
       ["Id"] = unit.AssetGuid,
       ["Name"] = ExtractUnitName(unit),
       ["Gender"] = unit.GetType().GetField("Gender", AllInstanceFlags)?.GetValue(unit)?.ToString() ?? "",
+      ["BaseCharacteristics"] = CharacteristicExtractor.ExtractBaseCharacteristics(unit),
       ["CareerProgressions"] = ExtractCareerProgressions(featureListFeature),
       ["UniqueFeatureIds"] = ExtractUniqueFeatureIds(featureListFeature),
       ["StartingEquipment"] = ExtractStartingEquipment(unit),

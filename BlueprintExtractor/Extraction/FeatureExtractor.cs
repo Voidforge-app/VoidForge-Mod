@@ -62,6 +62,14 @@ public static class FeatureExtractor {
 
     if (petInfo != null) result["PetInfo"] = petInfo;
 
+    var characteristicModifiers = CharacteristicExtractor.ExtractCharacteristicModifiers(blueprint);
+
+    result["CharacteristicModifiers"] = characteristicModifiers;
+
+    var advancementStep = CharacteristicExtractor.ExtractAdvancementStep(blueprint);
+
+    if (advancementStep.HasValue) result["AdvancementStep"] = advancementStep.Value;
+
     return result;
   }
 

@@ -1,5 +1,6 @@
 using BlueprintExtractor.Extraction;
 using BlueprintExtractor.Infrastructure;
+using Kingmaker.Blueprints;
 using Kingmaker.UnitLogic.Progression.Paths;
 
 namespace BlueprintExtractor.Exporters;
@@ -13,9 +14,18 @@ namespace BlueprintExtractor.Exporters;
 public static class OriginExporter {
   private const string Source = "origins";
 
+  /**
+   * GUID of the CustomCompanion BlueprintUnit - the base unit template used for player character creation. Its
+   * OldWarhammer* fields define the base characteristics that every fresh player starts with before any chargen choices
+   * are applied.
+   */
+  private const string CustomCompanionGuid = "baaff53a675a84f4983f1e2113b24552";
+
   public static void Export(ModLogger logger, string gameVersion, string gameRevision, string outputDirectory) {
     var extractedOrigins = new List<Dictionary<string, object>>();
     var skippedCount = 0;
+
+    var baseCharacteristics = ResolveBaseCharacteristics(logger);
 
     foreach (var origin in BlueprintsCatalog.AllBlueprints<BlueprintOriginPath>())
       try {
@@ -33,6 +43,7 @@ public static class OriginExporter {
 
         var originData = new Dictionary<string, object> {
           ["Id"] = origin.AssetGuid,
+          ["BaseCharacteristics"] = baseCharacteristics,
           ["ChargenGroups"] = chargenGroups,
         };
 
@@ -46,5 +57,25 @@ public static class OriginExporter {
     ExportWriter.WriteEnvelope(outputDirectory, "origins", envelope);
 
     logger.Result(Source, "export done", ("count", extractedOrigins.Count), ("filtered", skippedCount));
+  }
+
+  /**
+   * Reads the 9 base characteristic values from the CustomCompanion BlueprintUnit.
+   * All player characters share the same base stats before homeworld/occupation modifiers.
+   */
+  private static Dictionary<string, int> ResolveBaseCharacteristics(ModLogger logger) {
+    var baseUnit = BlueprintsCatalog.AllBlueprints<BlueprintUnit>()
+      .FirstOrDefault(unit => unit.AssetGuid == CustomCompanionGuid);
+
+    if (baseUnit != null) {
+      return CharacteristicExtractor.ExtractBaseCharacteristics(baseUnit);
+    }
+
+    logger.Warn(Source, $"base unit not found guid={CustomCompanionGuid}, using default 30 for all stats");
+
+    return new Dictionary<string, int> {
+      ["WS"] = 30, ["BS"] = 30, ["STR"] = 30, ["TGH"] = 30, ["AGI"] = 30,
+      ["INT"] = 30, ["PER"] = 30, ["WP"] = 30, ["FEL"] = 30,
+    };
   }
 }
