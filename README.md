@@ -75,7 +75,7 @@ For **features/talents**: only features reachable via career paths, chargen grou
 
 - Warhammer 40,000: Rogue Trader (Steam or GOG)
 - [Unity Mod Manager](https://www.nexusmods.com/site/mods/21) installed for Rogue Trader
-- .NET SDK 8+ (for building the static extractor)
+- .NET SDK 8+ (for building the static extractor, pipeline, and uploader)
 - .NET Framework 4.8.1 (used by the mod itself - included with Windows)
 
 ### Building
@@ -121,13 +121,23 @@ BlueprintExtractor/               - The UMM mod (net481, runs inside the game)
     GameVersion.cs                - Reads game version/revision via reflection
     ModLogger.cs                  - Structured logging to a per-export log file
     ExplorationPathAttribute.cs
-StaticExtractor/                   - Offline .jbp extractor and runtime/static merge tool
-Pipeline/                          - Interactive CLI orchestrator (static -> runtime -> merge -> upload)
-Uploader/                          - Rclone uploader for versioned VoidForge exports
+StaticExtractor/                   - Offline .jbp extractor (net8)
+  Program.cs                      - CLI entry point, orchestrates all exporters
+  Blueprints/                     - .jbp blueprint reading and graph traversal
+  Extraction/                     - Feature, rank entry, reachability helpers
+  Exporters/                      - Category exporters mirroring runtime output
+  Localization/                   - Localized string resolution
+  Infrastructure/                 - Export writer, baseline, manifest, merge
+
+Pipeline/                          - Interactive CLI orchestrator
+  Program.cs                      - Static -> runtime -> merge -> upload flow
+
+Uploader/                          - Rclone upload tool (net8)
+  Program.cs                      - Dev/prod bucket sync via rclone
 
 ```
 
-Exports are written to `Documents\\VoidForge` as their default source root.
+Exports are written to `Documents\VoidForge` as their default source root.
 
 ### Releasing
 
@@ -165,11 +175,31 @@ For non-interactive use:
 dotnet run --project Pipeline -- "Z:\Steam\...\WhRtModificationTemplate" --version 1.6.1.514 --no-upload
 ```
 
+#### Standalone static extraction
+
+If you only need the static baseline (no merge):
+
+```powershell
+dotnet run --project StaticExtractor -- "Z:\Steam\...\WhRtModificationTemplate" --output "Documents\VoidForge"
+```
+
+Options:
+- `--version <ver>` - override game version (auto-detected from `Version.info` by default)
+- `--types Type1,Type2` - only extract specific blueprint types (fast test mode)
+- `--no-reachability` - skip the reference graph build
+- `--merge-runtime <path>` - merge a runtime export into the static output
+
 ### Adding a new exporter
 
+**Runtime (in-game mod):**
 1. Create `BlueprintExtractor/Exporters/YourExporter.cs` with a single static `Export(...)` method matching the signature of existing exporters.
 2. Add a call to it in `MainExporter.ExportAll()`.
-3. Run `dotnet build VoidForge.slnx` against a fresh export to confirm.
+
+**Static (.jbp extraction):**
+1. Create `StaticExtractor/Exporters/StaticYourExporter.cs` matching the pattern of existing static exporters.
+2. Add a call to it in `StaticMainExporter.ExportAll()`.
+
+Then run `dotnet build VoidForge.slnx` and test with a fresh export.
 
 ### Code conventions
 
