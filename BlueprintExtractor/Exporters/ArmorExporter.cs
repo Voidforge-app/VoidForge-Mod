@@ -25,12 +25,16 @@ public static class ArmorExporter {
 
     foreach (var armorBlueprint in BlueprintsCatalog.AllBlueprints<BlueprintItemArmor>())
       try {
+        if (!RuntimeBaseline.Allows("armor", armorBlueprint.AssetGuid)) {
+          RuntimeBaseline.ValidateRuntimeId("armor", armorBlueprint.AssetGuid, logger);
+          continue;
+        }
+
         var allFields = BlueprintFieldExtractor.ExtractSimpleFields(armorBlueprint);
 
         if (!allFields.TryGetValue("Name", out var nameValue) || nameValue is not string armorName ||
-            !ItemFilter.IsValidName(armorName)) {
+            !ItemFilter.IsValidName(armorName))
           continue;
-        }
 
         if (!ItemFilter.IsPlayerRelevant(allFields, armorBlueprint)) {
           skippedCount++;
