@@ -75,7 +75,7 @@ For **features/talents**: only features reachable via career paths, chargen grou
 
 - Warhammer 40,000: Rogue Trader (Steam or GOG)
 - [Unity Mod Manager](https://www.nexusmods.com/site/mods/21) installed for Rogue Trader
-- .NET SDK 8+ (for building and running the validator)
+- .NET SDK 8+ (for building the static extractor)
 - .NET Framework 4.8.1 (used by the mod itself - included with Windows)
 
 ### Building
@@ -121,27 +121,13 @@ BlueprintExtractor/               - The UMM mod (net481, runs inside the game)
     GameVersion.cs                - Reads game version/revision via reflection
     ModLogger.cs                  - Structured logging to a per-export log file
     ExplorationPathAttribute.cs
+StaticExtractor/                   - Offline .jbp extractor and runtime/static merge tool
+Pipeline/                          - Interactive CLI orchestrator (static -> runtime -> merge -> upload)
+Uploader/                          - Rclone uploader for versioned VoidForge exports
 
-ExportValidator/                  - xUnit test project (net8, no game dependency)
-  Helpers/
-    ExportLoader.cs               - Finds and loads export JSON files
-  Tests/
-    FeaturesTests.cs              - Feature field completeness
-    CompanionsTests.cs            - Companion field completeness
-    EncyclopediaTests.cs          - Encyclopedia entry completeness
-    OriginsTests.cs               - Origin/homeworld completeness
-    CrossReferenceTests.cs        - Cross-file integrity (prerequisite GUIDs, encyclopedia links, equipment IDs)
 ```
 
-### Running the validator
-
-`ExportValidator` is a standalone xUnit suite that validates the JSON outputs. It locates exports automatically by walking up from the test binary until it finds a `.exploration\<version>\` directory, then falling back to `Documents\VoidForge\<version>\`.
-
-```powershell
-dotnet test ExportValidator/ExportValidator.csproj
-```
-
-Run this after any export to catch broken cross-references, missing fields, or schema regressions before shipping.
+Exports are written to `Documents\\VoidForge` as their default source root.
 
 ### Releasing
 
@@ -159,12 +145,31 @@ Requirements: clean working tree, `gh` CLI installed and authenticated.
 
 The script updates the version in `BlueprintExtractor.csproj`, `Info.json` (UMM metadata), and `Repository.json` (UMM auto-update manifest), then commits, tags, pushes, and publishes the GitHub release with an auto-generated changelog.
 
+### Full export pipeline (new game version)
+
+When a new game version drops, the `VoidForge` pipeline tool runs the whole process:
+
+```powershell
+dotnet run --project Pipeline
+```
+
+This will:
+1. Auto-detect the game root and version from `Version.info`
+2. Run static extraction from `.jbp` files
+3. Prompt you to launch the game and run the runtime mod export
+4. Merge runtime + static into `Documents\VoidForge\<version>\`
+5. Prompt to upload to R2
+
+For non-interactive use:
+```powershell
+dotnet run --project Pipeline -- "Z:\Steam\...\WhRtModificationTemplate" --version 1.6.1.514 --no-upload
+```
+
 ### Adding a new exporter
 
 1. Create `BlueprintExtractor/Exporters/YourExporter.cs` with a single static `Export(...)` method matching the signature of existing exporters.
 2. Add a call to it in `MainExporter.ExportAll()`.
-3. Add a corresponding test file in `ExportValidator/Tests/YourTests.cs`.
-4. Run `dotnet test` against a fresh export to confirm.
+3. Run `dotnet build VoidForge.slnx` against a fresh export to confirm.
 
 ### Code conventions
 

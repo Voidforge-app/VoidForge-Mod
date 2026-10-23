@@ -4,5 +4,8 @@
         <File Path="Repository.json"/>
     </Folder>
 
-    <Project Path="BlueprintExtractor/BlueprintExtractor.csproj" DisplayName="BlueprintExtractor"/>
+    <Project Path="BlueprintExtractor/BlueprintExtractor.csproj"/>
+    <Project Path="Pipeline/Pipeline.csproj"/>
+    <Project Path="StaticExtractor/StaticExtractor.csproj"/>
+    <Project Path="Uploader/Uploader.csproj"/>
 </Solution>
