@@ -45,6 +45,10 @@ public static class EquipmentExporter {
 
       // Only include character-slot items; consumables and starship items are excluded
       if (!SlotByBlueprintType.TryGetValue(equipmentBlueprint.GetType().Name, out var slot)) continue;
+      if (!RuntimeBaseline.Allows("equipment", equipmentBlueprint.AssetGuid)) {
+        RuntimeBaseline.ValidateRuntimeId("equipment", equipmentBlueprint.AssetGuid, logger);
+        continue;
+      }
 
       try {
         var allFields = BlueprintFieldExtractor.ExtractSimpleFields(equipmentBlueprint);

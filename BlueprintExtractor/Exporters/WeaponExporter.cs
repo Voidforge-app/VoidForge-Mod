@@ -27,6 +27,11 @@ public static class WeaponExporter {
 
     foreach (var weaponBlueprint in BlueprintsCatalog.AllBlueprints<BlueprintItemWeapon>())
       try {
+        if (!RuntimeBaseline.Allows("weapons", weaponBlueprint.AssetGuid)) {
+          RuntimeBaseline.ValidateRuntimeId("weapons", weaponBlueprint.AssetGuid, logger);
+          continue;
+        }
+
         var allFields = BlueprintFieldExtractor.ExtractSimpleFields(weaponBlueprint);
 
         if (!allFields.TryGetValue("Name", out var nameValue) || nameValue is not string weaponName ||

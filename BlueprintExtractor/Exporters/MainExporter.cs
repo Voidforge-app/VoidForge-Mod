@@ -23,6 +23,8 @@ public static class MainExporter {
     logger.Info("export", $"outputDir={outputDirectory}");
     logger.Info("export", $"registeredBlueprints={BlueprintsCatalog.TotalRegisteredCount()}");
 
+    RuntimeBaseline.Load(gameVersion, gameRevision, outputDirectory, logger);
+
     try {
       var reachableItemGuids = ItemReachabilityIndex.Build(logger);
 
