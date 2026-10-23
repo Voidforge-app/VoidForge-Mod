@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>VoidForgeUploader</AssemblyName>
+        <Description>Uploads VoidForge exports to Cloudflare R2 via rclone</Description>
+        <Version>1.0.0</Version>
+        <LangVersion>latest</LangVersion>
+        <RootNamespace>Uploader</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+</Project>
