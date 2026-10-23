@@ -198,8 +198,8 @@ public static partial class Program {
   }
 
   private static List<string> ListBuckets(string remote) {
-    // Request path-only output so bucket names are not affected by rclone's human-readable size columns.
-    var output = RunRcloneCapture(["lsd", "--format", "p", $"{remote}:"]);
+    // lsd lists directory names only - no --format flag needed
+    var output = RunRcloneCapture(["lsd", $"{remote}:"]);
 
     if (string.IsNullOrWhiteSpace(output)) return [];
 
